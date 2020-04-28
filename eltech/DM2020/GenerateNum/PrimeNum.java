@@ -30,7 +30,10 @@ public class PrimeNum
 	 */
 	public PrimeNum(double a)
 	{
-		this.k = (long)(Math.log(1-a) / Math.log(4)) + 1;
+		// Надо бы это ускорить)
+		//k >= ln(1-a)/ln(4)
+		//this.k = (long)(Math.log(1-a) / Math.log(4)) + 1;
+		for(this.k = 1; 1 - Math.pow(0.25, this.k) < a; this.k++ );
 	}
 
 	/**

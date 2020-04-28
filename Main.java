@@ -12,7 +12,7 @@ public class Main
 		System.out.println("How ~digits?");
 		long c = in.nextLong();
 		
-		PrimeNum rndPrime = new PrimeNum(0.999);
+		PrimeNum rndPrime = new PrimeNum(10000);
 		BigInteger a = rndPrime.rndSophieGermainNum(c, 5);
 		BigInteger second = a.multiply(BigInteger.valueOf(2)).add(BigInteger.ONE);
 		System.out.println(a + " isPrime " + rndPrime.millerRabinTest(a));
