@@ -8,7 +8,6 @@ import java.io.ByteArrayOutputStream;
 
 /*
  * JOPA! B rotEb*lETO!
- * HADO EwE DO6ABuTb COJlb!
  * А ты скопировал вопрос или ответ?!
  */
 
@@ -33,23 +32,32 @@ public class AES256
 
 	public static void main(String[] args) 
 	{
-		AES256 aes256 = new AES256();
+		byte[] key = AES256.getRndKey256();
+		AES256 aes256;
 		//String mes = "Hello";
-		String mes = "Hello HuKuTA. BAw KJlol4 = 6548421365892736145983564983216549872639875463298175462139785463289714659213548712649872136589213684596321854761282281337";
+		String mes = "Hello HuKuTA. BAw KJlol4 = " + AES256.ByteArrToStr(key);
 		for (int i = 0; i < 3; i++) 
 		{
+			aes256 = new AES256(key);
 			byte[] shifr = aes256.makeAES256(mes.getBytes(), AES256.ifENCRYPT);
 			System.out.println(new String(shifr));
+			aes256 = null;
+			aes256 = new AES256(key);
 			byte[] src = aes256.makeAES256(shifr, AES256.ifDECRYPT);
 			System.out.println(new String(src));
+			aes256 = null;
 		}
 		System.out.println("============");
 		for (int i = 0; i < 3; i++) 
 		{
+			aes256 = new AES256(key);
 			byte[] shifr = aes256.makeAES256_withSalt(mes.getBytes(), AES256.ifENCRYPT);
 			System.out.println(new String(shifr));
+			aes256 = null;
+			aes256 = new AES256(key);
 			byte[] src = aes256.makeAES256_withSalt(shifr, AES256.ifDECRYPT);
 			System.out.println(new String(src));
+			aes256 = null;
 		}
 	}
 
