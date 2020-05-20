@@ -1,11 +1,15 @@
+package eltech.DM2020;
+
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import java.security.SecureRandom;
+import java.util.Scanner;
+
 import javax.crypto.spec.SecretKeySpec;
 import java.security.NoSuchAlgorithmException;
 import java.io.ByteArrayOutputStream;
-
+import java.io.*;
 /*
  * JOPA! B rotEb*lETO!
  * А ты скопировал вопрос или ответ?!
@@ -30,7 +34,75 @@ public class AES256
 	 */
 	public static final int ifDECRYPT = Cipher.DECRYPT_MODE;
 
-	public static void main(String[] args) 
+	public static void main(String[] args)
+	{
+		int usrC;
+		byte[] key = null;
+		Scanner in = new Scanner(System.in);
+
+		System.out.println("Generade key? 1 = YES");
+		usrC = Integer.valueOf( in.nextLine() );
+		if(usrC == 1)
+		{
+			key = AES256.getRndKey256();
+			try(FileOutputStream fos = new FileOutputStream("key", false))
+			{
+				fos.write(key, 0, key.length);
+			}
+			catch(IOException ex)
+			{ 
+				System.out.println(ex.getMessage());
+			}
+		}
+
+		try(FileInputStream fin = new FileInputStream("key"))
+		{
+			key = new byte[fin.available()];
+			fin.read(key, 0, fin.available());  
+		}
+		catch(IOException ex)
+		{
+			System.out.println(ex.getMessage());
+		}
+		AES256 aes256 = new AES256(key);
+
+		System.out.println("\t1 - Read from EnFile\n\t2 - Write to EnFile");
+		usrC = Integer.valueOf( in.nextLine() );
+		if(usrC == 1)
+		{
+			byte[] buff = null;
+			try(FileInputStream fin = new FileInputStream("text"))
+			{
+				buff = new byte[fin.available()];
+				fin.read(buff, 0, fin.available());
+			}
+			catch(IOException ex)
+			{
+				System.out.println(ex.getMessage());
+			}
+			buff = aes256.makeAES256(buff, AES256.ifDECRYPT);
+			System.out.println( "There is the text:\n" + new String(buff) );
+		}
+		else if (usrC == 2)
+		{
+			byte[] buff = null;
+			String S;
+			System.out.println("What do you want to write there? Write: ");
+			S = in.nextLine();
+			try(FileOutputStream fos = new FileOutputStream("text", false))
+			{
+				buff = aes256.makeAES256(S.getBytes(), AES256.ifENCRYPT);
+				fos.write( buff, 0, buff.length);
+			}
+			catch(IOException ex)
+			{
+				System.out.println(ex.getMessage());
+			}
+		}
+		in.close();
+	}
+
+	/*public static void main(String[] args) 
 	{
 		byte[] key = AES256.getRndKey256();
 		AES256 aes256;
@@ -59,7 +131,7 @@ public class AES256
 			System.out.println(new String(src));
 			aes256 = null;
 		}
-	}
+	}*/
 
 	/**
 	 * Конструктор, который генерирует ключ secretKey самостоятельно

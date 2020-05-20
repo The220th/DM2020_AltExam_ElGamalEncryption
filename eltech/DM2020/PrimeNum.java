@@ -1,4 +1,4 @@
-package eltech.DM2020.GenerateNum;
+package eltech.DM2020;
 
 import java.lang.*;
 import java.util.*;
