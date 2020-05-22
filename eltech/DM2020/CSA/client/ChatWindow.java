@@ -122,7 +122,8 @@ public class ChatWindow
 				String tempMsg = msgWindow.getText();
 				byte[] msg = MsgLogicSend(tempMsg);
 				msgWindow.setText("");
-				sendMessage(recipient, tempMsg, msg);
+				if(msg != null)
+					sendMessage(recipient, tempMsg, msg);
 			}});
 	}
 	
@@ -162,11 +163,47 @@ public class ChatWindow
 
 	private byte[] MsgLogicSend(String tempMsg)
 	{
+		ElGamalCipher buffEl;
+		boolean SyntaxisProblem = false;
+		byte[] buff;
 		/*
 			Команды начинаются с "!":
 			help - вывести подсказки
 			roll [число] - сгенерировать число от 0 до [число]
 
+			ElEn [P] [A] [other Y] [msg](строка) - зашифровать сообщение с помощью алгоритма Эль-Гамаля
+			ElDe [P] [A] [X] [msg](число) - расшифровать сообщение с помощью алгоритма Эль-Гамаля
+			ElSign [P] [A] [X] [msg] - подписать сообщение с помощью алгоритма Эль-Гамаля
+			ElVerify [P] [A] [other Y] [msg] - проверить подпись сообщения от пользователя, у которого публичный ключ [other Y], поле вычитов [P] и генератор [A]
+			ElSignKey [P] [A] [X] [key] [msg] - подписать ключ
+			ElVerifyKey [P] [A] [other Y] [key] - проверить подпись ключа. [other Y] - это публичный ключ того, кто подписывал
+
+			initEl [P] [A] [X] [Y] - инициализировать шифровальщик, использующий алгоритм Эль Гамаля
+			initEl [P] [A] - инициализировать шифровальщик, использующий алгоритм Эль Гамаля. При этом X и Y сгенерируются сами
+			initEldefault - инициализировать шифровальщик, использующий алгоритм Эль Гамаля. При этом в качестве P и A будут взяты стандартные значения, X и Y сгенерируются сами
+			initEldefault [X] [Y] - инициализировать шифровальщик, использующий алгоритм Эль Гамаля. При этом в качестве P и A будут взяты стандартные значения
+			initEl - инициализировать шифровальщик, использующий алгоритм Эль Гамаля. При этом P, A, X, Y сгенерируются сами. На это уйдёт какое-то время. Возможно даже несколько минут. Программа не будет отвечать во время генерации
+			initContact [other Y] - инициализировать публичный ключ того, кому вы собираетесь отправлять сообщения
+			
+			ElGetY - получить ваш публичный ключ 
+			ElGetX - получить ваш секретный ключ 
+			ElGetP - получить ваше поле вычитов P
+			ElGetA - получить ваш генератор поля вычитов A
+
+			Sign [msg] - подписать сообщение
+			Verify [msg] - проверить подпись сообщения
+			Verify [msg] [other Y] - проверить подпись сообщения от пользователя, чей публичный ключ [other Y]
+			SignKey [key] [msg] - подписать ключ
+			VerifyKey [key] [other Y] - проверить подпись ключа. [other Y] - это публичный ключ того, кто подписывал
+
+			initAES [key] - инициализировать шифровальщик, использующий алгоритм AES-256
+			initAES - инициализировать шифровальщик, использующий алгоритм AES-256. Ключ сгенерируется сам
+			AESgetKey - получает ключ, с помощью которого шифруются сообщения
+
+			CryptoSwitch [число] (или [строка]). [число] такое (или [строка] такая), что:
+			0 (off или none) - все входящие и исходящие сообщения передаются без шифрования.
+			1 (ElGamal) - все входящие и исходящие сообщения шифруются с помощью алгоритма Ель-Гамаля
+			2 (*AES*) - все входящие и исходящие сообщения шифруются с помощью алгоритма AES-256
 		*/
 		if(tempMsg.length() > 0)
 		{
@@ -177,22 +214,71 @@ public class ChatWindow
 			return tempMsg.getBytes();
 
 		
-		byte[] res; /*именно res отправится, а если команда, то ничего не выведется*/
+		byte[] res = null; /*именно res отправится и, если команда, то ничего не выведется*/
 
-		tempMsg = tempMsg.replaceAll("\n", "");
+		tempMsg = tempMsg.replaceAll("\n", " ");
 		String[] cm = tempMsg.split(" ");
 		chatWindow.append("\n\tОтвет запроса: \n");
-		switch(cm[0])
+		try
 		{
-			case "!roll":
-				BigInteger a = PrimeNum.rndBigInteger(BigInteger.ZERO, new BigInteger(  cm[1].replaceAll("[^0-9]", "")  ));
-				res = ("Пользователь " + ChatClient.getUsername() + " зароллил " + a.toString()).getBytes();
-				chatWindow.append("Вы заролили: " + a.toString() + "\n");
-				break;
-			default:
-				chatWindow.append("Syntaxis error\n");
-				res = null;
-				break;
+			switch(cm[0].toLowerCase())
+			{
+				case "!help":
+					res = null;
+					chatWindow.append("Тут будет помощь. Ага\n");
+					break;
+				case "!roll":
+					BigInteger a = PrimeNum.rndBigInteger(BigInteger.ZERO, new BigInteger(  cm[1].replaceAll("[^0-9]", "")  ));
+					res = ("Пользователь " + ChatClient.getUsername() + " зароллил " + a.toString()).getBytes();
+					chatWindow.append("Вы заролили: " + a.toString() + "\n");
+					break;
+				case "!elen": // ElEn [P] [A] [other Y] [msg](строка)
+					if(cm.length != 5){ SyntaxisProblem = true; break; }
+					buffEl = new ElGamalCipher((new BigInteger(cm[1])).toByteArray(), (new BigInteger(cm[2])).toByteArray(), (new BigInteger(cm[3])).toByteArray(), (new BigInteger(cm[3])).toByteArray());
+					chatWindow.append( PrimeNum.BytesToNum( buffEl.encrypt( cm[4].getBytes(), buffEl.getY() ) ).toString() + "\n");
+					res = null;
+					buffEl = null;
+					break;
+				case "!elde": // ElDe [P] [A] [X] [msg](число)
+					if(cm.length != 5){ SyntaxisProblem = true; break; }
+					buffEl = new ElGamalCipher((new BigInteger(cm[1])).toByteArray(), (new BigInteger(cm[2])).toByteArray(), (new BigInteger(cm[3])).toByteArray(), (new BigInteger(cm[3])).toByteArray());
+					chatWindow.append( new String( buffEl.decrypt( PrimeNum.NumToBytes( new BigInteger(cm[4]) ) ) ) + "\n");
+					res = null;
+					buffEl = null;
+					break;
+				case "!elsign": // ElSign [P] [A] [X] [msg]
+					if(cm.length != 5) { SyntaxisProblem = true; break; }
+					buffEl = new ElGamalCipher((new BigInteger(cm[1])).toByteArray(), (new BigInteger(cm[2])).toByteArray(), (new BigInteger(cm[3])).toByteArray(), (new BigInteger(cm[3])).toByteArray());
+					chatWindow.append( PrimeNum.BytesToNum(  buffEl.signMessage( cm[4].getBytes() )   ) + "\n");
+					break;
+				case "!elverify": // ElVerify [P] [A] [other Y] [msg](число)
+					if(cm.length != 5) { SyntaxisProblem = true; break; }
+					buff = ElGamalCipher.verifyMessage(PrimeNum.NumToBytes(new BigInteger(cm[4])), (new BigInteger(cm[3])).toByteArray(), (new BigInteger(cm[1])).toByteArray(), (new BigInteger(cm[2])).toByteArray());
+					chatWindow.append( new String(buff) + "\n");
+					break;
+				case "!elsignkey": // ElSignKey [P] [A] [X] [key] [msg]
+					if(cm.length != 6) { SyntaxisProblem = true; break; }
+					buffEl = new ElGamalCipher((new BigInteger(cm[1])).toByteArray(), (new BigInteger(cm[2])).toByteArray(), (new BigInteger(cm[3])).toByteArray(), (new BigInteger(cm[3])).toByteArray());
+					buff = buffEl.signKey((new BigInteger(cm[4])).toByteArray(), (cm[5]).getBytes());
+					chatWindow.append( PrimeNum.BytesToNum(buff) + "\n" );
+					break;
+				case "!elverifykey": // ElVerifyKey [P] [A] [other Y] [key]
+					if(cm.length != 5) { SyntaxisProblem = true; break; }
+					byte[][] VerKey = ElGamalCipher.verifyKey(PrimeNum.NumToBytes(new BigInteger (cm[4])), (new BigInteger(cm[3])).toByteArray(), (new BigInteger(cm[1])).toByteArray(), (new BigInteger(cm[2])).toByteArray());
+					chatWindow.append("Описание: " + new String(VerKey[1]) + "\nКлюч:\n" + new BigInteger(VerKey[0]) + "\n" );
+					break;
+				default:
+					chatWindow.append("Syntaxis error. Попробуйте ввести \"!help\"\n");
+					res = null;
+					break;
+			}
+			if(SyntaxisProblem)
+				chatWindow.append("Syntaxis error. Попробуйте ввести \"!help\". Также проверьте, что вы не поставили пробелы, где не следовало\n");
+		}
+		catch(Throwable t)
+		{
+			chatWindow.append("Syntaxis error. Попробуйте ввести \"!help\"\n");
+			t.printStackTrace();
 		}
 		return res;
 	}

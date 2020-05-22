@@ -317,4 +317,44 @@ public class PrimeNum
 		// вернуть "вероятно простое"
 		return true;
 	}
+
+	/**
+	 * Метод, который позволит единственным образом вредставить байты в виде большого числа
+	 * 
+	 * @param b - набор байт, который необходимо представить в виде большого числа
+	 * @return большое число, которо представляет единственным образом b
+	 */
+	public static BigInteger BytesToNum(byte[] b)
+	{
+		byte[] res = new byte[b.length + 1];
+		
+		for(int i = 0; i < b.length; i++)
+			res[i+1] = b[i];
+		res[0] = 127;
+		return new BigInteger(res);
+	}
+
+	/**
+	 * Метод, который позволяет представить единственным образом большое число в виде байт
+	 * 
+	 * @param a - число, которое необходимо представить в виде байт
+	 * @return байты, которые представляют число есдинственным образом
+	 */
+	public static byte[] NumToBytes(BigInteger a)
+	{
+		byte[] b = a.toByteArray();
+		byte[] res = new byte[b.length-1];
+		for(int i = 0; i < res.length; i++)
+			res[i] = b[i+1];
+		return res;
+	}
+
+	public static void main(String[] args)
+	{
+		String S = "Ky2142151";
+		byte[] b = S.getBytes();
+		BigInteger a = BytesToNum(b);
+		System.out.println(a);
+		System.out.println( new String( NumToBytes(a) )  );
+	}
 }

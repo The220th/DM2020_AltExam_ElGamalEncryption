@@ -11,7 +11,7 @@ public class Test
 	
 	public static void main(String[] args)
 	{
-		ElGamalCipher test = new ElGamalCipher(P, A);
+		ElGamalCipher test = new ElGamalCipher();
 		ElGamalCipher test2 = new ElGamalCipher(test.getP(), test.getA());
 		
 		System.out.println("X1: " + new BigInteger(test.getX()));

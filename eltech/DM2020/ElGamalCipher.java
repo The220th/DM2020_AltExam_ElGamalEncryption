@@ -160,6 +160,11 @@ public class ElGamalCipher
         BigInteger k;
         int n, i;
 
+        //System.out.println("msg: " + new String(msg));
+        //System.out.println("P: " + P);
+        //System.out.println("A: " + A);
+        //System.out.println("X: " + X);
+
         //Разбить сообщение на большие числа меньше, чем P
         //System.out.println(new BigInteger(msg) + "\n");//!!!Debug 
         //String[] buff = (new BigInteger(msg)).toString().split("(?<=\\G.{" + maxLength + "})");
@@ -230,6 +235,14 @@ public class ElGamalCipher
             resByteBuffer.put(msgByte);
         }
         res = resByteBuffer.array();
+
+        //System.out.println("DeMsg: " + new String( decrypt(res, (new BigInteger("920256062478")).toByteArray() )   ));
+        //System.out.println("EnMsg (res): " + AES256.ByteArrToStr(res) );
+        //System.out.println("EnMsg (res): " + AES256.ByteArrToStr(res) );
+        //System.out.println("EnMsg (1): " + AES256.ByteArrToStr((new BigInteger(1, res)).toByteArray() ));
+        //System.out.println("EnMsg (2): " + AES256.ByteArrToStr( (new BigInteger(1,  (new BigInteger(1, res)).toByteArray())).toByteArray()  ));
+        //System.out.println("DeMsg: " + new String( decrypt( (new BigInteger((new BigInteger(res)).toString())).toByteArray()  , (new BigInteger("920256062478")).toByteArray() )   ) );
+
         return res;
     }
 
@@ -607,7 +620,7 @@ public class ElGamalCipher
 
         if(S.length == 2)
         {
-            res[0] = S[1].getBytes();
+            res[0] = S[S.length-1].getBytes();
             res[1] = S[0].getBytes();
         }
         else

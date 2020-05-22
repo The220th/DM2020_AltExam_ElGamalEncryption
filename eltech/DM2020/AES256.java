@@ -136,7 +136,7 @@ public class AES256
 	/**
 	 * Конструктор, который генерирует ключ secretKey самостоятельно
 	 */
-	public AES256() 
+	public AES256()
 	{
 		try 
 		{
@@ -154,7 +154,7 @@ public class AES256
 	 * 
 	 * @param key
 	 */
-	public AES256(byte[] key) 
+	public AES256(byte[] key)
 	{
 		try 
 		{
