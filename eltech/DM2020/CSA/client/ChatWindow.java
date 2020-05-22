@@ -52,7 +52,7 @@ public class ChatWindow
 	private static final int aesMode = 2;
 	private int currentMode;
 
-	private byte[] ElKey;
+	private byte[] ElContactKey;
 	private byte[] aesKey;
 	
 	public ChatWindow(final String recipient, JFrame viewFrame)
@@ -60,7 +60,7 @@ public class ChatWindow
 		currentMode = 0;
 		elCipher = null;
 		aesCipher = null;
-		ElKey = null;
+		ElContactKey = null;
 		aesKey = null;
 
 		System.out.println("Created new chat window with " + recipient);
@@ -189,9 +189,9 @@ public class ChatWindow
 			ElGetX - получить ваш секретный ключ 
 			ElGetP - получить ваше поле вычитов P
 			ElGetA - получить ваш генератор поля вычитов A
+			ElGetContactY - получить публичный ключ того, кому вы отсылаете сообщения
 
 			Sign [msg] - подписать сообщение
-			Verify [msg] - проверить подпись сообщения
 			Verify [msg] [other Y] - проверить подпись сообщения от пользователя, чей публичный ключ [other Y]
 			SignKey [key] [msg] - подписать ключ
 			VerifyKey [key] [other Y] - проверить подпись ключа. [other Y] - это публичный ключ того, кто подписывал
@@ -202,13 +202,28 @@ public class ChatWindow
 
 			CryptoSwitch [число] (или [строка]). [число] такое (или [строка] такая), что:
 			0 (off или none) - все входящие и исходящие сообщения передаются без шифрования.
-			1 (ElGamal) - все входящие и исходящие сообщения шифруются с помощью алгоритма Ель-Гамаля
-			2 (*AES*) - все входящие и исходящие сообщения шифруются с помощью алгоритма AES-256
+			1 (ElGamal или el) - все входящие и исходящие сообщения шифруются с помощью алгоритма Ель-Гамаля
+			2 (AES или AES256, или AES-256) - все входящие и исходящие сообщения шифруются с помощью алгоритма AES-256
 		*/
 		if(tempMsg.length() > 0)
 		{
 			if(!tempMsg.substring(0, 1).equals("!"))
-				return tempMsg.getBytes();
+			{
+				switch(currentMode)
+				{
+					case ChatWindow.NoCryptMode:
+						return tempMsg.getBytes();
+					case ChatWindow.ElMode:
+						byte[] resMsgEl = elCipher.encrypt(tempMsg.getBytes(), ElContactKey);
+						return resMsgEl;
+					case ChatWindow.aesMode:
+						byte[] resMsgAES = aesCipher.makeAES256_withSalt(tempMsg.getBytes(), AES256.ifENCRYPT);
+						return resMsgAES;
+					default:
+						System.out.println("Failed successfully in switch Mode. My congratulations. And how did u do this?!\n");
+						break;
+				}
+			}
 		}
 		else
 			return tempMsg.getBytes();
@@ -218,7 +233,7 @@ public class ChatWindow
 
 		tempMsg = tempMsg.replaceAll("\n", " ");
 		String[] cm = tempMsg.split(" ");
-		chatWindow.append("\n\tОтвет запроса: \n");
+		chatWindow.append("\n\tОтвет запроса ( " + cm[0] + " ): \n");
 		try
 		{
 			switch(cm[0].toLowerCase())
@@ -231,6 +246,109 @@ public class ChatWindow
 					BigInteger a = PrimeNum.rndBigInteger(BigInteger.ZERO, new BigInteger(  cm[1].replaceAll("[^0-9]", "")  ));
 					res = ("Пользователь " + ChatClient.getUsername() + " зароллил " + a.toString()).getBytes();
 					chatWindow.append("Вы заролили: " + a.toString() + "\n");
+					break;
+				case "!initel": // initEl [P] [A] [X] [Y] или initEl [P] [A], или initEl
+					if(cm.length == 5)
+						elCipher = new ElGamalCipher((new BigInteger(cm[1])).toByteArray(), (new BigInteger(cm[2])).toByteArray(), (new BigInteger(cm[3])).toByteArray(), (new BigInteger(cm[4])).toByteArray());
+					else if(cm.length == 3)
+						elCipher = new ElGamalCipher((new BigInteger(cm[1])).toByteArray(), (new BigInteger(cm[2])).toByteArray());
+					else if(cm.length == 1)
+						elCipher = new ElGamalCipher();
+					else
+						SyntaxisProblem = true;
+					if(!SyntaxisProblem) chatWindow.append("\tПроинициализировано\n");
+					break;
+				case "!initeldefault": // initEldefault [X] [Y] или initEldefault
+					if(cm.length == 3)
+						elCipher = new ElGamalCipher(ChatClient.getdefaultP(), ChatClient.getDefaultA(), (new BigInteger(cm[1])).toByteArray(), (new BigInteger(cm[2])).toByteArray());
+					else if(cm.length == 1)
+						elCipher = new ElGamalCipher(ChatClient.getdefaultP(), ChatClient.getDefaultA());
+					else
+						SyntaxisProblem = true;
+					if(!SyntaxisProblem) chatWindow.append("\tПроинициализировано\n");
+					break;
+				case "!initcontact": // initContact [other Y]
+					if(cm.length == 2)
+						ElContactKey = (new BigInteger(cm[1])).toByteArray();
+					else
+						SyntaxisProblem = true;
+					if(!SyntaxisProblem) chatWindow.append("\tПроинициализировано\n");
+					break;
+				case "!initaes": // initAES [key] или initAES
+					if(cm.length == 2)
+						aesCipher = new AES256( PrimeNum.NumToBytes(new BigInteger(cm[1])) );
+					else if(cm.length == 1)
+						aesCipher = new AES256();
+					else
+						SyntaxisProblem = true;
+					if(!SyntaxisProblem) chatWindow.append("\tПроинициализировано\n");
+					break;
+				case "!aesgetkey": // AESgetKey
+					if(aesCipher != null)
+						chatWindow.append( PrimeNum.BytesToNum(aesCipher.getKey()) + "\n");
+					else
+						chatWindow.append("\t \"AES шифровальшик\" ещё не проинициализирован. Используйте команду AESgetKey\n");
+					break;
+				case "!elgety": // ElGetY
+					if(elCipher != null)
+						chatWindow.append( new BigInteger(elCipher.getY()) + "\n" );
+					else
+						chatWindow.append("\t Ключ ещё не проинициализирован. Используйте команды initEl или initEldefault\n");
+					break;
+				case "!elgetx": // ElGetX
+					if(elCipher != null)
+						chatWindow.append( new BigInteger(elCipher.getX()) + "\n" );
+					else
+						chatWindow.append("\t Ключ ещё не проинициализирован. Используйте команды initEl или initEldefault\n");
+					break;
+				case "!elgetp": // ElGetP
+					if(elCipher != null)
+						chatWindow.append( new BigInteger(elCipher.getP()) + "\n" );
+					else
+						chatWindow.append("\t Ключ ещё не проинициализирован. Используйте команды initEl или initEldefault\n");
+					break;
+				case "!elgeta": // ElGetA
+					if(elCipher != null)
+						chatWindow.append( new BigInteger(elCipher.getA()) + "\n" );
+					else
+						chatWindow.append("\t Ключ ещё не проинициализирован. Используйте команды initEl или initEldefault\n");
+					break;
+				case "!elgetcontacty": // ElGetContactY
+					if(ElContactKey != null)
+						chatWindow.append( new BigInteger(ElContactKey) + "\n" );
+					else
+						chatWindow.append("\t Ключ ещё не проинициализирован. Используйте команду initContact\n");
+					break;
+				case "!sign": // Sign [msg]
+					if(cm.length != 2){ SyntaxisProblem = true; break; }
+					if(elCipher != null)
+						chatWindow.append(  PrimeNum.BytesToNum(elCipher.signMessage( (cm[1]).getBytes() ) )  + "\n" );
+					else
+						chatWindow.append("\t \"Шифровальшик\" ещё не проинициализирован. Используйте команды initEl или initEldefault\n");
+					break;
+				case "!verify": // Verify [msg] [other Y]
+					if(cm.length != 3){ SyntaxisProblem = true; break; }
+					if(elCipher != null)
+						chatWindow.append( new String ( elCipher.verifyMessage(PrimeNum.NumToBytes( new BigInteger(cm[1]) ), (new BigInteger(cm[2])).toByteArray()) )  + "\n" );
+					else
+						chatWindow.append("\t \"Шифровальшик\" ещё не проинициализирован. Используйте команды initEl или initEldefault\n");
+					break;
+				case "!signkey": // SignKey [key] [msg]
+					if(cm.length != 3){ SyntaxisProblem = true; break; }
+					if(elCipher != null)
+						chatWindow.append( PrimeNum.BytesToNum( elCipher.signKey((new BigInteger(cm[1]).toByteArray()), (cm[2]).getBytes()) )  + "\n" );
+					else
+						chatWindow.append("\t \"Шифровальшик\" ещё не проинициализирован. Используйте команды initEl или initEldefault\n");
+					break;
+				case "!verifykey": // VerifyKey [key] [other Y]
+					if(cm.length != 3){ SyntaxisProblem = true; break; }
+					if(elCipher != null)
+					{
+						byte[][] KeyAndMsgByte = elCipher.vefifyKey( PrimeNum.NumToBytes( new BigInteger(cm[1]) ), (new BigInteger(cm[2])).toByteArray() );
+						chatWindow.append("Описание: " + new String(KeyAndMsgByte[1]) + "\nКлюч:\n" + new BigInteger(KeyAndMsgByte[0]) + "\n" );
+					}
+					else
+						chatWindow.append("\t \"Шифровальшик\" ещё не проинициализирован. Используйте команды initEl или initEldefault\n");
 					break;
 				case "!elen": // ElEn [P] [A] [other Y] [msg](строка)
 					if(cm.length != 5){ SyntaxisProblem = true; break; }
@@ -267,6 +385,40 @@ public class ChatWindow
 					byte[][] VerKey = ElGamalCipher.verifyKey(PrimeNum.NumToBytes(new BigInteger (cm[4])), (new BigInteger(cm[3])).toByteArray(), (new BigInteger(cm[1])).toByteArray(), (new BigInteger(cm[2])).toByteArray());
 					chatWindow.append("Описание: " + new String(VerKey[1]) + "\nКлюч:\n" + new BigInteger(VerKey[0]) + "\n" );
 					break;
+				case "!cryptoswitch": // CryptoSwitch [что-то]
+				/*
+					0 (off или none) - все входящие и исходящие сообщения передаются без шифрования.
+					1 (ElGamal или el) - все входящие и исходящие сообщения шифруются с помощью алгоритма Ель-Гамаля
+					2 (AES или AES256, или AES-256) - все входящие и исходящие сообщения шифруются с помощью алгоритма AES-256
+				*/
+					if(cm.length != 2) { SyntaxisProblem = true; break; }
+					if( (cm[1]).toLowerCase().equals("0") || (cm[1]).toLowerCase().equals("off") || (cm[1]).toLowerCase().equals("none") )
+					{
+						currentMode = ChatWindow.NoCryptMode;
+						chatWindow.append("Шифрование отключено\n");
+					}
+					else if( (cm[1]).toLowerCase().equals("1") || (cm[1]).toLowerCase().equals("elgamal") || (cm[1]).toLowerCase().equals("el") )
+					{
+						if(elCipher != null && ElContactKey != null)
+						{
+							currentMode = ChatWindow.ElMode;
+							chatWindow.append("Теперь все сообщения отправленные и входящие будут автоматически шифроваться с помощью алгорима Ель-Гамаля в соотвествии с выставленными настройками\n");
+						}
+						else
+							chatWindow.append("\t \"Шифровальшик\" или публичный ключ получателя ещё не проинициализированы. Используйте команды initEl, initEldefault или initContact\n");
+					}
+					else if( (cm[1]).toLowerCase().equals("2") || (cm[1]).toLowerCase().equals("aes") || (cm[1]).toLowerCase().equals("aes256") || (cm[1]).toLowerCase().equals("aes-256") )
+					{
+						if(aesCipher != null)
+						{
+							currentMode = ChatWindow.aesMode;
+							chatWindow.append("Теперь все сообщения отправленные и входящие будут автоматически шифроваться с помощью алгорима AES-256 в соотвествии с выставленными настройками\n");
+						}
+						else
+							chatWindow.append("\t \"AES-256 шифровальшик\" ещё не проинициализирован. Используйте команду AESgetKey\n");
+					}
+					else
+						SyntaxisProblem = true;
 				default:
 					chatWindow.append("Syntaxis error. Попробуйте ввести \"!help\"\n");
 					res = null;
@@ -288,14 +440,14 @@ public class ChatWindow
 		byte[] msg;
 		switch(currentMode)
 		{
-			case 0:
+			case ChatWindow.NoCryptMode:
 				msg = tempMsg;
 				break;
-			case 1:
-				msg = "Coming soon".getBytes();
+			case ChatWindow.ElMode:
+				msg = elCipher.decrypt(tempMsg);
 				break;
-			case 2:
-				msg = "Coming soon".getBytes();
+			case ChatWindow.aesMode:
+				msg = aesCipher.makeAES256_withSalt(tempMsg, AES256.ifDECRYPT);
 				break;
 			default:
 				msg = "Установлен неправильный mode".getBytes();
