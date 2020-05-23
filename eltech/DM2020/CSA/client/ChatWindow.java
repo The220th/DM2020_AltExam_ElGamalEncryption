@@ -344,7 +344,7 @@ public class ChatWindow
 					if(cm.length != 3){ SyntaxisProblem = true; break; }
 					if(elCipher != null)
 					{
-						byte[][] KeyAndMsgByte = elCipher.vefifyKey( PrimeNum.NumToBytes( new BigInteger(cm[1]) ), (new BigInteger(cm[2])).toByteArray() );
+						byte[][] KeyAndMsgByte = elCipher.verifyKey( PrimeNum.NumToBytes( new BigInteger(cm[1]) ), (new BigInteger(cm[2])).toByteArray() );
 						chatWindow.append("Описание: " + new String(KeyAndMsgByte[1]) + "\nКлюч:\n" + new BigInteger(KeyAndMsgByte[0]) + "\n" );
 					}
 					else

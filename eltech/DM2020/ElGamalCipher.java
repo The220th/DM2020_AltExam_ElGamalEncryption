@@ -610,7 +610,7 @@ public class ElGamalCipher
      * @param KeeperPublicKey - публичный ключ того, кто подписывал
      * @param KeeperP - поле вычитов P того, кто подписывал
      * @param KeeperA - параметр A того, кто подписывал
-     * @return res[0] - ключ (или 123, если что-то не так), res[1] - описание этого ключа (или "There is no key", если что-то пошло не так)
+     * @return res[0] - ключ, выраженный в байтах (или 123, если что-то не так), res[1] - описание этого ключа (или "There is no key", если что-то пошло не так)
      */
     public static byte[][] verifyKey(byte[] SignedKey, byte[] KeeperPublicKey, byte[] KeeperP, byte[] KeeperA)
     {
@@ -620,12 +620,12 @@ public class ElGamalCipher
 
         if(S.length == 2)
         {
-            res[0] = S[S.length-1].getBytes();
+            res[0] = (new BigInteger(S[S.length-1])).toByteArray();
             res[1] = S[0].getBytes();
         }
         else
         {
-            res[0] = "123".getBytes();
+            res[0] = (new BigInteger("123")).toByteArray();
             res[1] = "There is no key".getBytes();
         }
         return res;
@@ -636,9 +636,9 @@ public class ElGamalCipher
      * 
      * @param SignedKey - подписанный ключ
      * @param KeeperPublicKey - публичный ключ того, кто подписывал
-     * @return res[0] - ключ (или 123, если что-то не так), res[1] - описание этого ключа (или "There is no key", если что-то пошло не так)
+     * @return res[0] - ключ, выраженный в байтах (или 123, если что-то не так), res[1] - описание этого ключа (или "There is no key", если что-то пошло не так)
      */
-    public byte[][] vefifyKey(byte[] SignedKey, byte[] KeeperPublicKey)
+    public byte[][] verifyKey(byte[] SignedKey, byte[] KeeperPublicKey)
     {
         byte[][] res = new byte[2][];
         String[] S = new String( verifyMessage(SignedKey, KeeperPublicKey) ).split(";;;");
@@ -646,12 +646,12 @@ public class ElGamalCipher
 
         if(S.length == 2)
         {
-            res[0] = S[1].getBytes();
+            res[0] = (new BigInteger(S[1])).toByteArray();
             res[1] = S[0].getBytes();
         }
         else
         {
-            res[0] = "123".getBytes();
+            res[0] = (new BigInteger("123")).toByteArray();
             res[1] = "There is no key".getBytes();
         }
         return res;
