@@ -11,6 +11,9 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.math.BigInteger;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.FileInputStream;
 
 import eltech.DM2020.CSA.cmn.Message;
 import eltech.DM2020.ElGamalCipher;
@@ -256,6 +259,22 @@ public class ChatClient
 	public static byte[] getdefaultP()
 	{
 		return ChatClient.defaultP;
+	}
+
+	public static String help()
+	{
+		String answer = "";
+		String line;
+		try (BufferedReader inFile = new BufferedReader(new InputStreamReader( new FileInputStream("ReadMe.txt"), "UTF-8")))
+		{
+			while ( (line = inFile.readLine()) != null )
+				answer += line + "\n";
+		}
+		catch(Throwable t)
+		{
+			System.out.println(t);
+		}
+		return answer;
 	}
 	
 	//Update 5/5/2015: Create member class as helper for ChatClient.  This 

@@ -71,7 +71,9 @@ public class ChatWindow
 		//Create frame, set size, center, and set exit on close
 		frame = new JFrame("Chat with " + recipient);
 		frame.setSize(600, 400);
-		frame.setResizable(false);
+		//frame.setSize(600, 400);
+		//frame.setResizable(false);
+		frame.setResizable(true);
 		frame.setLocationRelativeTo(viewFrame);
 		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		
@@ -120,6 +122,8 @@ public class ChatWindow
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				String tempMsg = msgWindow.getText();
+				if(!tempMsg.substring(0, 1).equals("!"))
+					tempMsg = "[mode " + currentMode + "] " + tempMsg;
 				byte[] msg = MsgLogicSend(tempMsg);
 				msgWindow.setText("");
 				if(msg != null)
@@ -139,7 +143,7 @@ public class ChatWindow
 	public void sendMessage(String recipient, String tempMsg, byte[] message)
 	{
 		Date time = new Date();
-		if(!recipient.equals("All") && tempMsg.length() > 0 && !tempMsg.substring(0, 1).equals("!"))
+		if( !recipient.equals("All") && tempMsg.length() > 0 && !tempMsg.substring(0, 1).equals("!") )
 			chatWindow.append(ChatClient.getUsername() + " [" + sdf.format(time) 
 				+ "]: " + tempMsg + "\n");
 		ChatClient.sendMessage(recipient, message, Message.MESSAGE);
@@ -166,9 +170,11 @@ public class ChatWindow
 		boolean SyntaxisProblem = false;
 		byte[] buff;
 		/*
-			Команды начинаются с "!":
+			Все команды начинаются с "!":
 			help - вывести подсказки
 			roll [число] - сгенерировать число от 0 до [число]
+			muteMode - (не принимать)/(принимать) сообщения, которые были зашифрованы другим способом
+			сlear (иди cls) - очистить поле с сообщениями
 
 			ElEn [P] [A] [other Y] [msg](строка) - зашифровать сообщение с помощью алгоритма Эль-Гамаля
 			ElDe [P] [A] [X] [msg](число) - расшифровать сообщение с помощью алгоритма Эль-Гамаля
@@ -240,12 +246,20 @@ public class ChatWindow
 			{
 				case "!help":
 					res = null;
-					chatWindow.append("Тут будет помощь. Ага\n");
+					chatWindow.append( ChatClient.help() );
 					break;
 				case "!roll":
 					BigInteger a = PrimeNum.rndBigInteger(BigInteger.ZERO, new BigInteger(  cm[1].replaceAll("[^0-9]", "")  ));
-					res = ("Пользователь " + ChatClient.getUsername() + " зароллил " + a.toString()).getBytes();
+					res = ("_User " + ChatClient.getUsername() + " rolls " + a.toString()).getBytes();
 					chatWindow.append("Вы заролили: " + a.toString() + "\n");
+					break;
+				case "!mutemode": // muteMode
+					mutedOtherMode = !mutedOtherMode;
+					chatWindow.append("Все сообщения, зашифрованные другим спобом теперь " + (mutedOtherMode?"приниматься не будут":"будут приниматься") + "\n");
+					break;
+				case "!clear": // clear
+				case "!cls": // cls
+					chatWindow.setText("");
 					break;
 				case "!initel": // initEl [P] [A] [X] [Y] или initEl [P] [A], или initEl
 					if(cm.length == 5)
