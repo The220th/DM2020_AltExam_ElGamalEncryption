@@ -51,9 +51,9 @@ public class ChatWindow
 	private static final int ElMode = 1;
 	private static final int aesMode = 2;
 	private int currentMode;
+	private boolean mutedOtherMode;
 
 	private byte[] ElContactKey;
-	private byte[] aesKey;
 	
 	public ChatWindow(final String recipient, JFrame viewFrame)
 	{
@@ -61,7 +61,7 @@ public class ChatWindow
 		elCipher = null;
 		aesCipher = null;
 		ElContactKey = null;
-		aesKey = null;
+		mutedOtherMode = false;
 
 		System.out.println("Created new chat window with " + recipient);
 		
@@ -148,16 +148,15 @@ public class ChatWindow
 	public void receiveMessage(String sender, String message)
 	{
 		Date time = new Date();
-		chatWindow.append(sender + " [" + sdf.format(time) + "]: " 
-				+ message + "\n");
+		chatWindow.append(sender + " [" + sdf.format(time) + "]: " + message + "\n");
 	}
 
 	public void receiveMessage(String sender, byte[] message)
 	{
 		Date time = new Date();
 		message = MsgLogicReceive(message);
-		chatWindow.append(sender + " [" + sdf.format(time) + "]: " 
-				+ new String(message) + "\n");
+		if(message != null)
+			chatWindow.append(sender + " [" + sdf.format(time) + "]: " + new String(message) + "\n");
 	}
 
 
@@ -212,13 +211,14 @@ public class ChatWindow
 				switch(currentMode)
 				{
 					case ChatWindow.NoCryptMode:
-						return tempMsg.getBytes();
+						byte[] resMsgNonCrypt = tempMsg.getBytes();
+						return addModeToMsg(resMsgNonCrypt, (byte)currentMode );
 					case ChatWindow.ElMode:
 						byte[] resMsgEl = elCipher.encrypt(tempMsg.getBytes(), ElContactKey);
-						return resMsgEl;
+						return addModeToMsg(resMsgEl, (byte)currentMode );
 					case ChatWindow.aesMode:
 						byte[] resMsgAES = aesCipher.makeAES256_withSalt(tempMsg.getBytes(), AES256.ifENCRYPT);
-						return resMsgAES;
+						return addModeToMsg(resMsgAES, (byte)currentMode );
 					default:
 						System.out.println("Failed successfully in switch Mode. My congratulations. And how did u do this?!\n");
 						break;
@@ -419,6 +419,7 @@ public class ChatWindow
 					}
 					else
 						SyntaxisProblem = true;
+					break;
 				default:
 					chatWindow.append("Syntaxis error. Попробуйте ввести \"!help\"\n");
 					res = null;
@@ -438,21 +439,67 @@ public class ChatWindow
 	private byte[] MsgLogicReceive(byte[] tempMsg)
 	{
 		byte[] msg;
-		switch(currentMode)
+		byte[][] buff = checkMsgMode(tempMsg);
+		byte mode = buff[0][0];
+		if(mode != (byte)currentMode)
 		{
-			case ChatWindow.NoCryptMode:
-				msg = tempMsg;
-				break;
-			case ChatWindow.ElMode:
-				msg = elCipher.decrypt(tempMsg);
-				break;
-			case ChatWindow.aesMode:
-				msg = aesCipher.makeAES256_withSalt(tempMsg, AES256.ifDECRYPT);
-				break;
-			default:
-				msg = "Установлен неправильный mode".getBytes();
-				break;
+			if(mutedOtherMode)
+				msg = null;
+			else
+				msg = buff[1];
+		}
+		else
+		{
+			switch(currentMode)
+			{
+				case ChatWindow.NoCryptMode:
+					msg = buff[1];
+					break;
+				case ChatWindow.ElMode:
+					msg = elCipher.decrypt( buff[1] );
+					break;
+				case ChatWindow.aesMode:
+					msg = aesCipher.makeAES256_withSalt(buff[1], AES256.ifDECRYPT);
+					break;
+				default:
+					msg = "Установлен неправильный mode".getBytes();
+					break;
+			}
 		}
 		return msg;
+	}
+
+	/**
+	 * Прикрепряет к сообщению текущий mode
+	 * 
+	 * @param msg - исходное сообщение
+	 * @param mode - текущий mode шифрования
+	 * @return mode + исходное сообщение
+	 */
+	public static byte[] addModeToMsg(byte[] msg, byte mode)
+	{
+		byte[] res = new byte[msg.length + 1];
+		
+		for(int i = 0; i < msg.length; i++)
+			res[i+1] = msg[i];
+		res[0] = mode;
+		return res;
+	}
+
+	/**
+	 * Достаёт из сообщения текущий mode и изменят сообщение как было
+	 * 
+	 * @param msg - mode + исходное сообщение
+	 * @return res[0][0] - mode; res[1] - исходное сообщение, без mode
+	 */
+	public static byte[][] checkMsgMode(byte[] msg)
+	{
+		byte[][] res = new byte[2][];
+		res[1] = new byte[msg.length-1];
+		res[0] = new byte[1];
+		for(int i = 0; i < (res[1]).length; i++)
+			res[1][i] = msg[i+1];
+		res[0][0] = msg[0];
+		return res;
 	}
 }

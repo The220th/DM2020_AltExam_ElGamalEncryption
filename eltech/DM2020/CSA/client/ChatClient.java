@@ -17,9 +17,8 @@ import eltech.DM2020.ElGamalCipher;
 import eltech.DM2020.AES256;
 import eltech.DM2020.PrimeNum;
 
-public class ChatClient {
-
-
+public class ChatClient 
+{
 	final static int portNumber = 8001;
 	private static String hostName = "";
 	private static CCView view;
