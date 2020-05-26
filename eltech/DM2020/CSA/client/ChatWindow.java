@@ -144,8 +144,12 @@ public class ChatWindow
 	{
 		Date time = new Date();
 		if( !recipient.equals("All") && tempMsg.length() > 0 && !tempMsg.substring(0, 1).equals("!") )
-			chatWindow.append(ChatClient.getUsername() + " [" + sdf.format(time) 
-				+ "]: " + tempMsg + "\n");
+			chatWindow.append(ChatClient.getUsername() + " [" + sdf.format(time) + "]: " + tempMsg + "\n");
+		
+		if (recipient.equals("All") &&  (currentMode == ChatWindow.ElMode || currentMode == ChatWindow.aesMode ))
+		{
+			chatWindow.append(ChatClient.getUsername() + " [" + sdf.format(time) + "]: " + tempMsg + "\n");
+		}
 		ChatClient.sendMessage(recipient, message, Message.MESSAGE);
 	}
 	
@@ -160,7 +164,11 @@ public class ChatWindow
 		Date time = new Date();
 		message = MsgLogicReceive(message);
 		if(message != null)
-			chatWindow.append(sender + " [" + sdf.format(time) + "]: " + new String(message) + "\n");
+		{
+			if( !sender.equals( ChatClient.getUsername() ) || currentMode == ChatWindow.NoCryptMode)
+				chatWindow.append(sender + " [" + sdf.format(time) + "]: " + new String(message) + "\n");
+			//chatWindow.append(sender + " [" + sdf.format(time) + "]: " + new String(message) + "\n");
+		}
 	}
 
 
@@ -237,8 +245,9 @@ public class ChatWindow
 		
 		byte[] res = null; /*именно res отправится и, если команда, то ничего не выведется*/
 
-		tempMsg = tempMsg.replaceAll("\n", " ");
-		String[] cm = tempMsg.split(" ");
+		//tempMsg = tempMsg.replaceAll("\n", " ");
+		//String[] cm = tempMsg.split(" ");
+		String[] cm = tempMsg.split("\\s+|\\n+");
 		chatWindow.append("\n\tОтвет запроса ( " + cm[0] + " ): \n");
 		try
 		{
@@ -333,8 +342,14 @@ public class ChatWindow
 					else
 						chatWindow.append("\t Ключ ещё не проинициализирован. Используйте команду initContact\n");
 					break;
+				case "!220":
+				case "!220th":
+				case "!the220th":
+					System.out.println("DA-DA 9!");
+					break;
 				case "!sign": // Sign [msg]
-					if(cm.length != 2){ SyntaxisProblem = true; break; }
+					if(cm.length < 2){ SyntaxisProblem = true; break; }
+					cm[1] = unionString(cm, 1, cm.length);
 					if(elCipher != null)
 						chatWindow.append(  PrimeNum.BytesToNum(elCipher.signMessage( (cm[1]).getBytes() ) )  + "\n" );
 					else
@@ -348,7 +363,8 @@ public class ChatWindow
 						chatWindow.append("\t \"Шифровальшик\" ещё не проинициализирован. Используйте команды initEl или initEldefault\n");
 					break;
 				case "!signkey": // SignKey [key] [msg]
-					if(cm.length != 3){ SyntaxisProblem = true; break; }
+					if(cm.length < 3){ SyntaxisProblem = true; break; }
+					cm[2] = unionString(cm, 2, cm.length);
 					if(elCipher != null)
 						chatWindow.append( PrimeNum.BytesToNum( elCipher.signKey((new BigInteger(cm[1]).toByteArray()), (cm[2]).getBytes()) )  + "\n" );
 					else
@@ -365,7 +381,8 @@ public class ChatWindow
 						chatWindow.append("\t \"Шифровальшик\" ещё не проинициализирован. Используйте команды initEl или initEldefault\n");
 					break;
 				case "!elen": // ElEn [P] [A] [other Y] [msg](строка)
-					if(cm.length != 5){ SyntaxisProblem = true; break; }
+					if(cm.length < 5){ SyntaxisProblem = true; break; }
+					cm[4] = unionString(cm, 4, cm.length);
 					buffEl = new ElGamalCipher((new BigInteger(cm[1])).toByteArray(), (new BigInteger(cm[2])).toByteArray(), (new BigInteger(cm[3])).toByteArray(), (new BigInteger(cm[3])).toByteArray());
 					chatWindow.append( PrimeNum.BytesToNum( buffEl.encrypt( cm[4].getBytes(), buffEl.getY() ) ).toString() + "\n");
 					res = null;
@@ -379,7 +396,8 @@ public class ChatWindow
 					buffEl = null;
 					break;
 				case "!elsign": // ElSign [P] [A] [X] [msg]
-					if(cm.length != 5) { SyntaxisProblem = true; break; }
+					if(cm.length < 5) { SyntaxisProblem = true; break; }
+					cm[4] = unionString(cm, 4, cm.length);
 					buffEl = new ElGamalCipher((new BigInteger(cm[1])).toByteArray(), (new BigInteger(cm[2])).toByteArray(), (new BigInteger(cm[3])).toByteArray(), (new BigInteger(cm[3])).toByteArray());
 					chatWindow.append( PrimeNum.BytesToNum(  buffEl.signMessage( cm[4].getBytes() )   ) + "\n");
 					break;
@@ -389,7 +407,8 @@ public class ChatWindow
 					chatWindow.append( new String(buff) + "\n");
 					break;
 				case "!elsignkey": // ElSignKey [P] [A] [X] [key] [msg]
-					if(cm.length != 6) { SyntaxisProblem = true; break; }
+					if(cm.length < 6) { SyntaxisProblem = true; break; }
+					cm[5] = unionString(cm, 5, cm.length);
 					buffEl = new ElGamalCipher((new BigInteger(cm[1])).toByteArray(), (new BigInteger(cm[2])).toByteArray(), (new BigInteger(cm[3])).toByteArray(), (new BigInteger(cm[3])).toByteArray());
 					buff = buffEl.signKey((new BigInteger(cm[4])).toByteArray(), (cm[5]).getBytes());
 					chatWindow.append( PrimeNum.BytesToNum(buff) + "\n" );
@@ -452,7 +471,7 @@ public class ChatWindow
 
 	private byte[] MsgLogicReceive(byte[] tempMsg)
 	{
-		byte[] msg;
+		byte[] msg = null;
 		byte[][] buff = checkMsgMode(tempMsg);
 		byte mode = buff[0][0];
 		if(mode != (byte)currentMode)
@@ -470,10 +489,24 @@ public class ChatWindow
 					msg = buff[1];
 					break;
 				case ChatWindow.ElMode:
-					msg = elCipher.decrypt( buff[1] );
+					try
+					{
+						msg = elCipher.decrypt( buff[1] );
+					}
+					catch(Exception e)
+					{
+						System.out.println("In [mode 1] received msg not for you");
+					}
 					break;
 				case ChatWindow.aesMode:
-					msg = aesCipher.makeAES256_withSalt(buff[1], AES256.ifDECRYPT);
+					try
+					{
+						msg = aesCipher.makeAES256_withSalt(buff[1], AES256.ifDECRYPT);
+					}
+					catch(Exception e)
+					{
+						System.out.println("In [mode 2] received msg not for you");
+					}
 					break;
 				default:
 					msg = "Установлен неправильный mode".getBytes();
@@ -515,5 +548,26 @@ public class ChatWindow
 			res[1][i] = msg[i+1];
 		res[0][0] = msg[0];
 		return res;
+	}
+
+	/**
+	 * Объединяет строки из cm в одну, имеющих индекс [i; j), через пробел. Если i >= j, то вернёт только строку по индексу j, если i или j больше, чем cm.length, то вернёт cm[0]
+	 * 
+	 * @param cm - массив строк, где некоторые нужно объединить
+	 * @param i - начиная с этого индекса
+	 * @param j - заканчивая этим индексом (не включая его)
+	 * @return объединённую строку
+	 */
+	public static String unionString(String[] cm, int i, int j)
+	{
+		if(i >= cm.length || j > cm.length)
+			return cm[0];
+		if(i >= j)
+			return cm[j];
+		int li;
+		StringBuilder sb = new StringBuilder();
+		for(li = i; li < j; li++)
+			sb.append(cm[li] + " ");
+		return sb.toString();
 	}
 }

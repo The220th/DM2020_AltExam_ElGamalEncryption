@@ -121,9 +121,19 @@ public class ChatServer {
 		return users.keySet().toArray(new String[users.size()]);
 	}
 	
-	public static void updateAllUsers(){
-		for(String user : users.keySet()){
-			users.get(user).sendMessage(new Message(user, "Server", getUsernames(), Message.UPDATE_USERS));
+	public static void updateAllUsers()
+	{
+		try
+		{
+			for(String user : users.keySet())
+			{
+				users.get(user).sendMessage(new Message(user, "Server", getUsernames(), Message.UPDATE_USERS));
+			}
+		}
+		catch(Exception e)
+		{
+			users.remove(user);
+			updateAllUsers();
 		}
 	}
 	
