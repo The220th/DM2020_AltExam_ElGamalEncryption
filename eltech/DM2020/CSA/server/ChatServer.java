@@ -130,16 +130,18 @@ public class ChatServer {
 	
 	public static void updateAllUsers()
 	{
+		String lastUser = "";
 		try
 		{
 			for(String user : users.keySet())
 			{
+				lastUser = user;
 				users.get(user).sendMessage(new Message(user, "Server", getUsernames(), Message.UPDATE_USERS));
 			}
 		}
 		catch(Exception e)
 		{
-			removeUser(user);
+			removeUser(lastUser);
 			updateAllUsers();
 		}
 	}
