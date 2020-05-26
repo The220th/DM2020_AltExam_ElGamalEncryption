@@ -52,13 +52,15 @@ public class CSHandler extends Thread {
 					objOut.close();
 					break;
 				} catch (IOException e1) {/*So many try catches*/}
-			} catch (Exception e) {
+			} catch (Exception e) 
+			{
 				e.printStackTrace();
 			}
 		}
 	}
 	
-	public void sendMessage(Message message) {
+	public void sendMessage(Message message) 
+	{
 		try 
 		{
 			objOut.writeObject(message);
@@ -66,8 +68,14 @@ public class CSHandler extends Thread {
 		} catch (IOException e) {
 			System.err.println("Message from " + message.getSender() + " to " + 
 					message.getRecipient() + " ran into some issues.");
-			e.printStackTrace();
+			//e.printStackTrace();
+			ChatServer.fixUsersRelevant();
 		}
 		
+	}
+
+	public boolean checkRelevant()
+	{
+		return socket.isClosed();
 	}
 }

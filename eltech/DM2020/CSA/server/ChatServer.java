@@ -153,7 +153,7 @@ public class ChatServer {
 		//view.updateUsers(getUsernames());
 	}
 
-	public static boolean checkLegal_Same(String userNew)
+	private static boolean checkLegal_Same(String userNew)
 	{
 		boolean res = true;
 		for(String userAlready : users.keySet())
@@ -163,6 +163,14 @@ public class ChatServer {
 				break;
 			}
 		return res;
+	}
+
+	public static void fixUsersRelevant()
+	{
+		for(String usr : users.keySet())
+			if( !users.get(usr).checkRelevant() )
+				users.remove(usr);
+		updateAllUsers();
 	}
 	
 	public static void main(String[] args){
