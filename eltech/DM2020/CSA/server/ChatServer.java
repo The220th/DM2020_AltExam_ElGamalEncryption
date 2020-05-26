@@ -91,12 +91,19 @@ public class ChatServer {
 			ObjectOutputStream objOut = new ObjectOutputStream(clientSocket.getOutputStream());
 			Message loginRequest = (Message) objIn.readObject();
 			
-			if(loginRequest.getType() == Message.LOGIN && !loginRequest.getData().equals("")){
-				
+			if(loginRequest.getType() == Message.LOGIN && !loginRequest.getData().equals(""))
+			{
+				String userName = (String) loginRequest.getData();
+				if(checkLegal_Same(userName) == false)
+				{
+					objOut.writeObject(new Message(null, "Server", "FAIL", Message.SERVER_RESPONSE));
+					return;
+				}
+
 				//Create new handler, log user in HashMap
 				CSHandler handler = new CSHandler(clientSocket, objIn, objOut);
-				users.put((String) loginRequest.getData(), handler);
-				controller.writeMsg("User " + loginRequest.getData() + " logged in");
+				users.put(userName, handler);
+				controller.writeMsg("User " + userName + " logged in");
 				
 				//Confirm login to user
 				objOut.writeObject(new Message(null, "Server", "SUCCESS", Message.SERVER_RESPONSE));
@@ -132,7 +139,7 @@ public class ChatServer {
 		}
 		catch(Exception e)
 		{
-			users.remove(user);
+			removeUser(user);
 			updateAllUsers();
 		}
 	}
@@ -142,6 +149,18 @@ public class ChatServer {
 		controller.writeMsg("User " + user + " has logged out.");
 		updateAllUsers();
 		//view.updateUsers(getUsernames());
+	}
+
+	public static boolean checkLegal_Same(String userNew)
+	{
+		boolean res = true;
+		for(String userAlready : users.keySet())
+			if(userAlready.equals(userNew))
+			{
+				res = false;
+				break;
+			}
+		return res;
 	}
 	
 	public static void main(String[] args){
