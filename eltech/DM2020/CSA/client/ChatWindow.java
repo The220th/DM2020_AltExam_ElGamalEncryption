@@ -258,9 +258,10 @@ public class ChatWindow
 					chatWindow.append( ChatClient.help() );
 					break;
 				case "!roll":
-					BigInteger a = PrimeNum.rndBigInteger(BigInteger.ZERO, new BigInteger(  cm[1].replaceAll("[^0-9]", "")  ));
-					res = ("_User " + ChatClient.getUsername() + " rolls " + a.toString()).getBytes();
-					chatWindow.append("Вы заролили: " + a.toString() + "\n");
+					String numRoll = cm[1].replaceAll("[^0-9]", "");
+					BigInteger a = PrimeNum.rndBigInteger(BigInteger.ZERO, new BigInteger(  numRoll  ));
+					res = ("_User " + ChatClient.getUsername() + " rolls [0; " + numRoll + ") " + a.toString()).getBytes();
+					chatWindow.append("Вы заролили [0; " + numRoll + "): " + a.toString() + "\n");
 					break;
 				case "!mutemode": // muteMode
 					mutedOtherMode = !mutedOtherMode;
