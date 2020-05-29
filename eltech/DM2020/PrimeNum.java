@@ -142,13 +142,13 @@ public class PrimeNum
 		return res;
 	}
 
-	/**
+	/*
 	 * Генерирует какое-то число на интервале [min; max). Это число не обязательно простое, скорее наоборот
 	 * 
 	 * @param min - минимальное число для генерации
 	 * @param max - максимальное число для генерации
 	 * @return сгенерированное какое-то число
-	 */
+	 /
 	public static BigInteger rndBigInteger(BigInteger min, BigInteger max)
 	{
 		long nMin = min.toString().length();
@@ -160,6 +160,35 @@ public class PrimeNum
 			buff = getZahl( r.nextLong() % (nMax-nMin) + nMin );
 		}while( buff.compareTo(min) < 0 || buff.compareTo(max) >= 0 );
 		return buff;
+	}*/
+	
+	/**
+	 * Генерирует какое-то число на интервале [min; max). Это число не обязательно простое, скорее наоборот
+	 * 
+	 * @param min - минимальное число для генерации
+	 * @param max - максимальное число для генерации
+	 * @return сгенерированное какое-то число
+	 */
+	public static BigInteger rndBigInteger(BigInteger min, BigInteger max)
+	{
+		// Николай, почему так грустно?
+		SecureRandom r = new SecureRandom();
+		int MaxBits = max.toByteArray().length * 10;
+		MaxBits = MaxBits*(r.nextInt() % 50 + 3);
+		BigInteger g = new BigInteger(MaxBits > 0?MaxBits:MaxBits*-1, r);
+		g = g.add( max.multiply( BigInteger.valueOf(r.nextInt() + 3) ) );
+		BigInteger res = min.add( g.mod(max.subtract(min)) ); // аля res = min + rnd() % (max-min)
+		/*BigInteger m;
+		if(max.getLowestSetBit() != 0)
+			m = max.add(BigInteger.ONE);
+		else
+			m = max.add(BigInteger.ZERO);
+		long buff = r.nextLong();
+		if (buff < 500)
+			buff += 500;
+		BigInteger g = BigInteger.valueOf( buff );
+		BigInteger res = min.add( m.modPow(g, max.subtract(min)) );*/
+		return res;
 	}
 	
 	/**

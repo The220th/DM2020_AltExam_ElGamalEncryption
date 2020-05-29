@@ -51,11 +51,11 @@ public class ElGamalCipher
     {
         this.P = new BigInteger(P);
         this.A = new BigInteger(A);
-        if(this.P.toString().length() > 100)
+        /*if(this.P.toString().length() > 100)
             this.X = PrimeNum.rndBigInteger(PrimeNum.getZahl(80), this.P);
         else
-            this.X = PrimeNum.rndBigInteger(BigInteger.valueOf(2), this.P);
-        
+            this.X = PrimeNum.rndBigInteger(BigInteger.valueOf(2), this.P);*/
+        this.X = PrimeNum.rndBigInteger(this.P.divide(BigInteger.valueOf(2)), this.P);
         this.Y = this.A.modPow(this.X, this.P);
     }
 
@@ -67,14 +67,16 @@ public class ElGamalCipher
     public ElGamalCipher()
     {
         PrimeNum numGen = new PrimeNum(10000);
-        BigInteger q = numGen.rndSophieGermainNum(50, 5); // 50 = 300
+        BigInteger q = numGen.rndSophieGermainNum(300, 5); // 50 = 300
         this.P = q.multiply(BigInteger.valueOf(2)).add(BigInteger.ONE);
         do
         {
-            this.A = PrimeNum.rndBigInteger(PrimeNum.getZahl(10), this.P); // 10 = 150
+			this.A = PrimeNum.rndBigInteger(this.P.divide(BigInteger.valueOf(2)), this.P);
+            //this.A = PrimeNum.rndBigInteger(PrimeNum.getZahl(150), this.P); // 10 = 150
         }while( this.A.modPow(q, this.P).compareTo(BigInteger.ONE) == 0 );
         
-        this.X = PrimeNum.rndBigInteger(PrimeNum.getZahl(10), this.P); // 10 = 100
+		this.X = PrimeNum.rndBigInteger(this.P.divide(BigInteger.valueOf(2)), this.P);
+        //this.X = PrimeNum.rndBigInteger(PrimeNum.getZahl(100), this.P); // 10 = 100
         
         this.Y = this.A.modPow(this.X, this.P);
     }
