@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+Main-Class: eltech.DM2020.CSA.client.ChatClient
+Created-By: 13.0.2 (Oracle Corporation)
+
