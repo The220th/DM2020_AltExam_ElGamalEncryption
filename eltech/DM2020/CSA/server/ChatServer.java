@@ -167,9 +167,11 @@ public class ChatServer {
 
 	public static void fixUsersRelevant()
 	{
+		Map<String, CSHandler> res = new HashMap<String, CSHandler>(users);
 		for(String usr : users.keySet())
-			if( !users.get(usr).checkRelevant() )
-				users.remove(usr);
+			if( users.get(usr).checkRelevant() )
+				res.remove(usr);
+		users = res;
 		updateAllUsers();
 	}
 	
